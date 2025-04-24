@@ -15,49 +15,50 @@ typedef unsigned char u8;
 typedef struct {
   u8 *data;
   size_t size;
-} binary_data;
+} raw_data;
 
-int read_file(const char* filepath, binary_data *bd) {
+size_t verbose = 0;
+
+int read_file(const char* filepath, raw_data *rd) {
 
   // TODO: verbose, assertions and errors checks
   
   FILE *file = fopen(filepath, "rb");
 
   fseek(file, 0, SEEK_END); // Jump to the EOF
-  bd->size = ftell(file);   // Get offset of file
+  rd->size = ftell(file);   // Get offset of file
   rewind(file);             // Return to begin of file
 
-  bd->data = (u8*) malloc(bd->size * sizeof(u8));
-  fread(bd->data, bd->size, 1, file);
+  rd->data = (u8*) malloc(rd->size * sizeof(u8));
+  fread(rd->data, rd->size, 1, file);
 
-  printf("[INFO] Readed %zu bytes from %s\n", bd->size, filepath);
-  printf("[INFO] First 10 bytes:\n    ");
-  for (size_t i=0; i<10; i++)
-    printf("%2X ", bd->data[i]);
-  printf("\n");
+  if (verbose) {
+    printf("[INFO] Readed %zu bytes from %s\n", rd->size, filepath);
+    printf("[INFO] First 10 bytes:\n    ");
+    for (size_t i=0; i<10; i++)
+      printf("%2X ", rd->data[i]);
+    printf("\n");
+  }
   
   fclose(file);
   return 0;
 }
 
-int close_file(const char* filepath, binary_data *bd) {
-
+int close_file(const char* filepath, raw_data *rd) {
   FILE *file = fopen(filepath, "wb");
-  fwrite(bd->data, bd->size, 1, file);
-
+  fwrite(rd->data, rd->size, 1, file);
   fclose(file);
-  
   return 0;
 }
 
 int main(size_t argc, char *argv) {
-  printf("hello, world!\n");
+  verbose = 1;
 
-  binary_data bd;
+  raw_data rd;
 
-  read_file(FILEPATH, &bd);
+  read_file(FILEPATH, &rd);
 
-  close_file(FILEPATH2, &bd);
-  free(bd.data);
+  close_file(FILEPATH2, &rd);
+  free(rd.data);
   return 0;
 }
