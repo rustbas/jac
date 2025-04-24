@@ -51,6 +51,22 @@ int close_file(const char* filepath, raw_data *rd) {
   return 0;
 }
 
+int count_freqs(unsigned long *ft, raw_data *rd) {
+  if (verbose)
+    printf("[INFO] Counting frequencies...\n");
+  for (size_t i = 0; i<rd->size; i++)
+    ft[rd->data[i]]++;
+
+  if (verbose == 2) {
+    for (size_t i=0; i<32; i++) {
+      for (size_t j=0; j<8; j++) {
+	printf("%02X: %9zu ", i*8+j, ft[i*8+j]);
+      }
+      printf("\n");
+    }
+  }
+}
+
 int main(size_t argc, char *argv) {
   verbose = 1;
 
@@ -59,18 +75,7 @@ int main(size_t argc, char *argv) {
 
   read_file(FILEPATH, &rd);
 
-  // TODO: fix counting
-  for (size_t i = 0; i<rd.size; i++)
-    freq_table[rd.data[i]]++;
-
-  if (verbose) {
-    for (size_t i=0; i<16; i++) {
-      for (size_t j=0; j<16; j++) {
-	printf("%02X: %4zu ", i*16+j, rd.data[i*16+j]);
-      }
-      printf("\n");
-    }
-  }
+  count_freqs(freq_table, &rd);
   
   close_file(FILEPATH2, &rd);
   free(rd.data);
