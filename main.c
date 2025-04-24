@@ -54,10 +54,24 @@ int close_file(const char* filepath, raw_data *rd) {
 int main(size_t argc, char *argv) {
   verbose = 1;
 
+  unsigned long freq_table[256] = {0};
   raw_data rd;
 
   read_file(FILEPATH, &rd);
 
+  // TODO: fix counting
+  for (size_t i = 0; i<rd.size; i++)
+    freq_table[rd.data[i]]++;
+
+  if (verbose) {
+    for (size_t i=0; i<16; i++) {
+      for (size_t j=0; j<16; j++) {
+	printf("%02X: %4zu ", i*16+j, rd.data[i*16+j]);
+      }
+      printf("\n");
+    }
+  }
+  
   close_file(FILEPATH2, &rd);
   free(rd.data);
   return 0;
