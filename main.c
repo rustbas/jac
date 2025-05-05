@@ -19,37 +19,8 @@ typedef struct {
 
 size_t verbose = 0;
 
-int read_file(const char* filepath, raw_data *rd) {
-
-  // TODO: verbose, assertions and errors checks
-  
-  FILE *file = fopen(filepath, "rb");
-
-  fseek(file, 0, SEEK_END); // Jump to the EOF
-  rd->size = ftell(file);   // Get offset of file
-  rewind(file);             // Return to begin of file
-
-  rd->data = (u8*) malloc(rd->size * sizeof(u8));
-  fread(rd->data, rd->size, 1, file);
-
-  if (verbose) {
-    printf("[INFO] Readed %zu bytes from %s\n", rd->size, filepath);
-    printf("[INFO] First 10 bytes:\n    ");
-    for (size_t i=0; i<10; i++)
-      printf("%2X ", rd->data[i]);
-    printf("\n");
-  }
-  
-  fclose(file);
-  return 0;
-}
-
-int close_file(const char* filepath, raw_data *rd) {
-  FILE *file = fopen(filepath, "wb");
-  fwrite(rd->data, rd->size, 1, file);
-  fclose(file);
-  return 0;
-}
+int read_file(const char* filepath, raw_data *rd, int verbose);
+int write_to_file(const char* filepath, raw_data *rd);
 
 int count_freqs(unsigned long *ft, raw_data *rd) {
   if (verbose)
@@ -73,11 +44,14 @@ int main(size_t argc, char *argv) {
   unsigned long freq_table[256] = {0};
   raw_data rd;
 
-  read_file(FILEPATH, &rd);
+  read_file(FILEPATH, &rd, verbose);
 
   count_freqs(freq_table, &rd);
   
-  close_file(FILEPATH2, &rd);
+  write_to_file(FILEPATH2, &rd);
   free(rd.data);
   return 0;
 }
+
+
+
