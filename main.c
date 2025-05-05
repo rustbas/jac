@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define UNIMPLEMENTED							\
 do {									\
@@ -61,6 +62,22 @@ int freq_comp(const void *a, const void *b) {
   return -(a_new->count - b_new->count);
 }
 
+void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n) {
+  for (size_t i=0; i<n; i++)
+    if (isprint(ft[i].symbol))
+      printf("    FT['%c'] = %zu\n", ft[i].symbol, ft[i].count);
+    else
+      printf("    FT[%X] = %zu\n", ft[i].symbol, ft[i].count);
+}
+
+typedef struct {
+  u8 symbol;
+  struct Node *left_node;
+  struct Node *right_node;
+} Node;
+
+typedef Node Root;
+
 int main(size_t argc, char *argv) {
   int verbose = 1;
 
@@ -75,14 +92,12 @@ int main(size_t argc, char *argv) {
 
   size_t n = 15;
   printf("First %d elements before sort: \n", n);
-  for (size_t i=0; i<n; i++)
-    printf("    FT[%02X] = %zu\n", ft[i].symbol, ft[i].count);
+  print_ft(ft, n);
 
   
   printf("First %d elements after sort: \n", n);
   qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
-  for (size_t i=0; i<n; i++)
-    printf("    FT[%02X] = %zu\n", ft[i].symbol, ft[i].count);
+  print_ft(ft, n);
   
   free(rd.data);
   return 0;
