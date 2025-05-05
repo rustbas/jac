@@ -55,8 +55,14 @@ int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose) {
   }
 }
 
+int freq_comp(const void *a, const void *b) {
+  freq *a_new = (freq*) a;
+  freq *b_new = (freq*) b;
+  return -(a_new->count - b_new->count);
+}
+
 int main(size_t argc, char *argv) {
-  int verbose = 2;
+  int verbose = 1;
 
   freq ft[FREQ_TABLE_SIZE] = {0};
   for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
@@ -65,8 +71,18 @@ int main(size_t argc, char *argv) {
   raw_data rd = {0};
 
   read_file(FILEPATH, &rd, verbose);
-
   count_freqs(ft, &rd, verbose);
+
+  size_t n = 15;
+  printf("First %d elements before sort: \n", n);
+  for (size_t i=0; i<n; i++)
+    printf("    FT[%02X] = %zu\n", ft[i].symbol, ft[i].count);
+
+  
+  printf("First %d elements after sort: \n", n);
+  qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
+  for (size_t i=0; i<n; i++)
+    printf("    FT[%02X] = %zu\n", ft[i].symbol, ft[i].count);
   
   free(rd.data);
   return 0;
