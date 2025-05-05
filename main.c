@@ -10,8 +10,6 @@ do {									\
 #define FILEPATH "data/data.fa"
 #define FILEPATH2 "data/data2.fa"
 
-size_t verbose = 0;
-
 typedef unsigned char u8;
 
 typedef struct {
@@ -25,28 +23,32 @@ typedef struct {
 } freq;
 
 #define FREQ_TABLE_SIZE 256
-typedef freq freq_table[FREQ_TABLE_SIZE];
+/* typedef freq freq_table[FREQ_TABLE_SIZE]; */
 
 int read_file(const char* filepath, raw_data *rd, int verbose);
 int write_to_file(const char* filepath, raw_data *rd);
 
-size_t get_index_from_ft(freq_table *ft, u8 symbol) {
+size_t get_index_from_ft(freq ft[FREQ_TABLE_SIZE], u8 symbol) {
   for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
-    if (ft[i]->symbol == symbol)
+    if (ft[i].symbol == symbol)
       return i;
-  exit(6969);
+  fprintf(stderr, "[ERR] Unreachable: %2X\n", symbol);
+  exit(69);
 }
 
-int count_freqs(unsigned long *ft, raw_data *rd) {
+int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose) {
   if (verbose)
     printf("[INFO] Counting frequencies...\n");
-  for (size_t i = 0; i<rd->size; i++)
-    ft[rd->data[i]]++;
-
+  for (size_t i = 0; i<rd->size; i++) {
+    /* size_t idx = get_index_from_ft(ft, rd->data[i]);  */
+    size_t idx = (size_t) rd->data[i];
+    ft[idx].count++;
+  }
+    
   if (verbose == 2) {
     for (size_t i=0; i<32; i++) {
       for (size_t j=0; j<8; j++) {
-	printf("%02X: %9zu ", i*8+j, ft[i*8+j]);
+	printf("%02X: %9zu ", i*8+j, ft[i*8+j].count);
       }
       printf("\n");
     }
@@ -54,16 +56,18 @@ int count_freqs(unsigned long *ft, raw_data *rd) {
 }
 
 int main(size_t argc, char *argv) {
-  verbose = 1;
+  int verbose = 2;
 
-  unsigned long freq_table[256] = {0};
-  raw_data rd;
+  freq ft[FREQ_TABLE_SIZE] = {0};
+  for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
+    ft[i].symbol = (u8)i;
+  
+  raw_data rd = {0};
 
   read_file(FILEPATH, &rd, verbose);
 
-  count_freqs(freq_table, &rd);
+  count_freqs(ft, &rd, verbose);
   
-  write_to_file(FILEPATH2, &rd);
   free(rd.data);
   return 0;
 }
