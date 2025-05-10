@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <assert.h>
+#include <string.h>
 
 #define UNIMPLEMENTED							\
 do {									\
 	fprintf(stderr, "%s:%d: UNIMPLEMENTED\n", __FILE__, __LINE__);	\
 	exit(1);							\
 } while(0);
-
-#define FILEPATH "data/data.fa"
-#define FILEPATH2 "data/data2.fa"
 
 typedef unsigned char u8;
 
@@ -78,26 +77,34 @@ typedef struct {
 
 typedef Node Root;
 
-int main(size_t argc, char *argv) {
-  int verbose = 1;
+#define BUFFER_SIZE 1024
 
+int main(size_t argc, char **argv) {
+  int verbose = 0;
+  char input_file[BUFFER_SIZE];
+  assert(argc == 3);
+  
+  for (size_t i=0; i<argc; i++) {
+    if (strcmp(argv[i], "-i") == 0)
+      strcpy(input_file, argv[++i]);
+  }
+  
   freq ft[FREQ_TABLE_SIZE] = {0};
   for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
     ft[i].symbol = (u8)i;
   
   raw_data rd = {0};
 
-  read_file(FILEPATH, &rd, verbose);
+  read_file(input_file, &rd, verbose);
   count_freqs(ft, &rd, verbose);
 
   size_t n = 15;
-  printf("First %d elements before sort: \n", n);
-  print_ft(ft, n);
+  /* printf("First %d elements before sort: \n", n); */
+  /* print_ft(ft, n); */
 
-  
-  printf("First %d elements after sort: \n", n);
   qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
-  print_ft(ft, n);
+  /* printf("First %d elements after sort: \n", n); */
+  /* print_ft(ft, n); */
   
   free(rd.data);
   return 0;
