@@ -34,7 +34,12 @@ int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose);
 int freq_comp(const void *a, const void *b);
 void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n);
 
-
+typedef struct {
+  struct Node *left_child;
+  struct Node *right_child;
+  char left_code, right_code;
+  size_t count;
+} Node;
 
 int main(size_t argc, char **argv) {
   int verbose = 0;
