@@ -1,7 +1,7 @@
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
 #include <string.h>
 
 #define UNIMPLEMENTED							\
@@ -9,6 +9,8 @@ do {									\
 	fprintf(stderr, "%s:%d: UNIMPLEMENTED\n", __FILE__, __LINE__);	\
 	exit(1);							\
 } while(0);
+
+#define BUFFER_SIZE 1024
 
 typedef unsigned char u8;
 
@@ -23,7 +25,6 @@ typedef struct {
 } freq;
 
 #define FREQ_TABLE_SIZE 256
-/* typedef freq freq_table[FREQ_TABLE_SIZE]; */
 
 int read_file(const char* filepath, raw_data *rd, int verbose);
 int write_to_file(const char* filepath, raw_data *rd);
@@ -33,15 +34,7 @@ int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose);
 int freq_comp(const void *a, const void *b);
 void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n);
 
-typedef struct {
-  u8 symbol;
-  struct Node *left_node;
-  struct Node *right_node;
-} Node;
 
-typedef Node Root;
-
-#define BUFFER_SIZE 1024
 
 int main(size_t argc, char **argv) {
   int verbose = 0;
