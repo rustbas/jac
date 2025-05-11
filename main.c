@@ -35,14 +35,76 @@ int freq_comp(const void *a, const void *b);
 void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n);
 
 typedef struct {
-  struct Node *left_child;
-  struct Node *right_child;
-  char left_code, right_code;
-  size_t count;
-} Node;
+  char code;
+  u8 symbol;
+  struct Tree *left_child;
+  struct Tree *right_child;
+  int isSequence;  
+} Tree;
+
+int build_huffman_tree(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth) {
+  if (depth == FREQ_TABLE_SIZE-1) {
+    Tree *left_sub_tree = malloc(sizeof(Tree));
+    Tree *right_sub_tree = malloc(sizeof(Tree));
+
+    left_sub_tree->symbol = ft[depth].symbol;
+    left_sub_tree->code = '0';
+    left_sub_tree->left_child = NULL;
+    left_sub_tree->right_child = NULL;
+    left_sub_tree->isSequence = 0;
+
+    right_sub_tree->symbol = ft[depth].symbol;
+    right_sub_tree->code = '1';
+    right_sub_tree->left_child = NULL;
+    right_sub_tree->right_child = NULL;
+    right_sub_tree->isSequence = 0;
+
+    tree->left_child = (struct Tree*) left_sub_tree;
+    tree->right_child = (struct Tree*) right_sub_tree;
+    tree->isSequence = 0;
+    tree->symbol = (u8) 0;
+    tree->code = (char) 0;
+  } else if (depth == 0) {
+    Tree *left_sub_tree = malloc(sizeof(Tree));
+    Tree *right_sub_tree = malloc(sizeof(Tree));
+
+    left_sub_tree->symbol = ft[depth].symbol;
+    left_sub_tree->code = '0';
+    left_sub_tree->left_child = NULL;
+    left_sub_tree->right_child = NULL;
+    left_sub_tree->isSequence = 0;
+
+    right_sub_tree->symbol = (u8) 0;
+    right_sub_tree->code = (char) 0;
+    right_sub_tree->isSequence = 1;
+
+    tree->isSequence = 1;
+    tree->left_child = (struct Tree*) left_sub_tree;
+    tree->right_child = (struct Tree*) right_sub_tree;
+    
+    build_huffman_tree(right_sub_tree, ft, depth+1);
+  }
+  else {
+    Tree *left_sub_tree = malloc(sizeof(Tree));
+    Tree *right_sub_tree = malloc(sizeof(Tree));
+
+    right_sub_tree->code = '1';
+    right_sub_tree->symbol = ft[depth].symbol;
+    right_sub_tree->left_child = NULL;
+    right_sub_tree->right_child = NULL;
+    right_sub_tree->isSequence = 0;
+
+    left_sub_tree->symbol = (u8) 0;
+    left_sub_tree->code = (char) 0;
+    left_sub_tree->isSequence = 1;
+    tree->left_child = (struct Tree*) left_sub_tree;
+    tree->right_child = (struct Tree*) right_sub_tree;
+    build_huffman_tree(left_sub_tree, ft, depth+1);
+  }
+}
 
 int main(size_t argc, char **argv) {
-  int verbose = 0;
+  int verbose = 1;
   char input_file[BUFFER_SIZE];
   assert(argc == 3);
   
@@ -67,6 +129,10 @@ int main(size_t argc, char **argv) {
   qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
   /* printf("First %d elements after sort: \n", n); */
   /* print_ft(ft, n); */
+  Tree *tree = malloc(sizeof(Tree));
+  build_huffman_tree(tree, ft, 0);
+
+  printf("%c\n", tree->code);
   
   free(rd.data);
   return 0;
