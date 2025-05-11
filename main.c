@@ -62,8 +62,8 @@ int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth
     right_sub_tree->right_child = NULL;
     right_sub_tree->isSequence = 0;
 
-    tree->left_child = (struct Tree*) left_sub_tree;
-    tree->right_child = (struct Tree*) right_sub_tree;
+    tree->left_child = left_sub_tree;
+    tree->right_child = right_sub_tree;
     tree->isSequence = 0;
     tree->symbol = (u8) 0;
     tree->code = (char) 0;
