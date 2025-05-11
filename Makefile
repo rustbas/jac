@@ -8,3 +8,6 @@ files.o: files.c
 
 freq_table.o: freq_table.c
 	cc freq_table.c --compile -o freq_table.o
+
+clean:
+	rm -f *.o *.out
