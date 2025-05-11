@@ -82,10 +82,12 @@ int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth
     right_sub_tree->isSequence = 1;
 
     tree->isSequence = 1;
-    tree->left_child = (struct Tree*) left_sub_tree;
-    tree->right_child = (struct Tree*) right_sub_tree;
+    tree->symbol = (u8)0;
+    tree->code = (char)0;
+    tree->left_child = left_sub_tree;
+    tree->right_child = right_sub_tree;
     
-    build_huffman_tree(right_sub_tree, ft, depth+1);
+    build_huffman_tree_helper(right_sub_tree, ft, depth+1);
   }
   else {
     Tree *left_sub_tree = malloc(sizeof(Tree));
@@ -100,10 +102,22 @@ int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth
     left_sub_tree->symbol = (u8) 0;
     left_sub_tree->code = (char) 0;
     left_sub_tree->isSequence = 1;
-    tree->left_child = (struct Tree*) left_sub_tree;
-    tree->right_child = (struct Tree*) right_sub_tree;
-    build_huffman_tree(left_sub_tree, ft, depth+1);
+    tree->left_child = left_sub_tree;
+    tree->right_child = right_sub_tree;
+    build_huffman_tree_helper(left_sub_tree, ft, depth+1);
   }
+}
+
+int build_huffman_tree(Tree *tree, freq ft[FREQ_TABLE_SIZE]) {
+  return build_huffman_tree_helper(tree, ft, 0);
+}
+
+void remove_huffman_tree(Tree *tree) {
+  if (tree->left_child != NULL)
+    remove_huffman_tree(tree->left_child);
+  if (tree->right_child != NULL)
+    remove_huffman_tree(tree->right_child);
+  free(tree);
 }
 
 int main(size_t argc, char **argv) {
@@ -133,11 +147,12 @@ int main(size_t argc, char **argv) {
   /* printf("First %d elements after sort: \n", n); */
   /* print_ft(ft, n); */
   Tree *tree = malloc(sizeof(Tree));
-  build_huffman_tree(tree, ft, 0);
+  build_huffman_tree(tree, ft);
 
-  printf("%c\n", tree->code);
+  printf("%d\n", tree->isSequence);
   
   free(rd.data);
+  remove_huffman_tree(tree);
   return 0;
 }
 
