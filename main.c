@@ -34,15 +34,18 @@ int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose);
 int freq_comp(const void *a, const void *b);
 void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n);
 
-typedef struct {
+struct Tree {
   char code;
   u8 symbol;
   struct Tree *left_child;
   struct Tree *right_child;
   int isSequence;  
-} Tree;
+};
+typedef struct Tree Tree;
 
-int build_huffman_tree(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth) {
+
+
+int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth) {
   if (depth == FREQ_TABLE_SIZE-1) {
     Tree *left_sub_tree = malloc(sizeof(Tree));
     Tree *right_sub_tree = malloc(sizeof(Tree));
