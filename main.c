@@ -5,10 +5,10 @@
 #include <string.h>
 
 #define UNIMPLEMENTED							\
-do {									\
-	fprintf(stderr, "%s:%d: UNIMPLEMENTED\n", __FILE__, __LINE__);	\
-	exit(1);							\
-} while(0);
+  do {									\
+    fprintf(stderr, "%s:%d: UNIMPLEMENTED\n", __FILE__, __LINE__);	\
+    exit(1);								\
+  } while(0);
 
 #define BUFFER_SIZE 1024
 
@@ -66,7 +66,7 @@ int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth
     tree->right_child = right_sub_tree;
     tree->isSequence = 0;
     tree->symbol = (u8) 0;
-    tree->code = (char) 0;
+    tree->code = '0';
   } else if (depth == 0) {
     Tree *left_sub_tree = malloc(sizeof(Tree));
     Tree *right_sub_tree = malloc(sizeof(Tree));
@@ -78,12 +78,12 @@ int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth
     left_sub_tree->isSequence = 0;
 
     right_sub_tree->symbol = (u8) 0;
-    right_sub_tree->code = (char) 0;
+    right_sub_tree->code = '1';
     right_sub_tree->isSequence = 1;
 
     tree->isSequence = 1;
     tree->symbol = (u8)0;
-    tree->code = (char)0;
+    tree->code = '0';
     tree->left_child = left_sub_tree;
     tree->right_child = right_sub_tree;
     
@@ -100,7 +100,7 @@ int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth
     right_sub_tree->isSequence = 0;
 
     left_sub_tree->symbol = (u8) 0;
-    left_sub_tree->code = (char) 0;
+    left_sub_tree->code = '0';
     left_sub_tree->isSequence = 1;
     tree->left_child = left_sub_tree;
     tree->right_child = right_sub_tree;
@@ -118,6 +118,34 @@ void remove_huffman_tree(Tree *tree) {
   if (tree->right_child != NULL)
     remove_huffman_tree(tree->right_child);
   free(tree);
+}
+
+#define STRING_SIZE 1024
+struct dictionary {
+  u8 symbol;
+  char code[STRING_SIZE];
+};
+typedef struct dictionary Dict;
+
+int build_dict_symbol(Tree *tree, Dict *d, size_t depth) {
+  if (tree->left_child != NULL)
+    if (tree->left_child->isSequence == 0) {
+      if (tree->left_child->symbol == d->symbol) {
+	d->code[depth] = tree->left_child->code;
+	/* d->code[depth+1] = '\0'; */
+      } else {
+	d->code[depth] = tree->right_child->code;
+	build_dict_symbol(tree->right_child, d, depth+1);
+      }
+    } else {
+      if (tree->right_child->symbol == d->symbol) {
+	d->code[depth] = tree->right_child->code;
+	/* d->code[depth+1] = '\0'; */
+      } else {
+	d->code[depth] = tree->left_child->code;
+	build_dict_symbol(tree->left_child, d, depth+1);
+      }
+    }
 }
 
 int main(size_t argc, char **argv) {
@@ -145,11 +173,27 @@ int main(size_t argc, char **argv) {
 
   qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
   /* printf("First %d elements after sort: \n", n); */
-  /* print_ft(ft, n); */
+  /* print_ft(ft, FREQ_TABLE_SIZE); */
   Tree *tree = malloc(sizeof(Tree));
   build_huffman_tree(tree, ft);
 
-  printf("%d\n", tree->isSequence);
+  Dict huffman_dict[FREQ_TABLE_SIZE];
+  for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
+    huffman_dict[i].symbol = (u8)i;
+
+  /* size_t shift = 0x47; */
+
+  for (size_t shift=0; shift < FREQ_TABLE_SIZE; shift++) {
+    build_dict_symbol(tree, &huffman_dict[shift], 0);
+  }
+
+  for (size_t shift=48; shift < 100; shift++) {
+    printf("    %2X:%c: %s\n",
+	   huffman_dict[shift].symbol,
+	   huffman_dict[shift].symbol,
+	   huffman_dict[shift].code);   
+  }
+
   
   free(rd.data);
   remove_huffman_tree(tree);
