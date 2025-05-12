@@ -187,10 +187,10 @@ int main(size_t argc, char **argv) {
     build_dict_symbol(tree, &huffman_dict[shift], 0);
   }
 
-  for (size_t shift=48; shift < 100; shift++) {
-    printf("    %2X:%c: %s\n",
+  for (size_t shift=0; shift < 0xFF; shift++) {
+    printf("    %02X: %s\n",
 	   huffman_dict[shift].symbol,
-	   huffman_dict[shift].symbol,
+	   /* huffman_dict[shift].symbol, */
 	   huffman_dict[shift].code);   
   }
 
