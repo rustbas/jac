@@ -50,6 +50,7 @@ int freq_comp(const void *a, const void *b) {
 }
 
 void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n) {
+  n = (n <= FREQ_TABLE_SIZE) ? n : FREQ_TABLE_SIZE;
   for (size_t i=0; i<n; i++)
     if (isprint(ft[i].symbol))
       printf("    FT['%c'] = %zu\n", ft[i].symbol, ft[i].count);
