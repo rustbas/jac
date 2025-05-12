@@ -46,7 +46,7 @@ typedef struct Tree Tree;
 
 
 int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth) {
-  if (depth == FREQ_TABLE_SIZE-1) {
+  if (depth == FREQ_TABLE_SIZE-2) {
     Tree *left_sub_tree = malloc(sizeof(Tree));
     Tree *right_sub_tree = malloc(sizeof(Tree));
 
@@ -56,7 +56,7 @@ int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth
     left_sub_tree->right_child = NULL;
     left_sub_tree->isSequence = 0;
 
-    right_sub_tree->symbol = ft[depth].symbol;
+    right_sub_tree->symbol = ft[depth+1].symbol;
     right_sub_tree->code = '1';
     right_sub_tree->left_child = NULL;
     right_sub_tree->right_child = NULL;
