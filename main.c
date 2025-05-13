@@ -187,15 +187,57 @@ int main(size_t argc, char **argv) {
     build_dict_symbol(tree, &huffman_dict[shift], 0);
   }
 
-  for (size_t shift=0; shift < 0xFF; shift++) {
-    printf("    %02X: %s\n",
-	   huffman_dict[shift].symbol,
-	   /* huffman_dict[shift].symbol, */
-	   huffman_dict[shift].code);   
+  size_t shifts[] = {0x0A, 0x61, 0x62, 0x63};
+  size_t shift;
+  for (size_t i=0; i < sizeof(shifts) / sizeof(shifts[0]); i++) {
+    shift = shifts[i];
+    if (verbose)
+      printf("    0x%02X: %s\n",
+	     huffman_dict[shift].symbol,
+	     /* huffman_dict[shift].symbol, */
+	     huffman_dict[shift].code);   
+  }
+
+  /* for (size_t i=0; i<rd.size; i++) */
+  /*   printf(" 0x%02X", rd.data[i]); */
+  /* printf("\n"); */
+  /* for (size_t i=0; i<rd.size; i++) */
+  /*   printf("%5s", huffman_dict[rd.data[i]].code); */
+  /* printf("\n"); */
+
+  // TODO: Concat using realloc
+  char *result_string = malloc(sizeof(char));
+  result_string[0] = '\0';
+  for (size_t i=0; i<rd.size; i++) {
+    result_string = strcat(result_string, huffman_dict[rd.data[i]].code);
+  }
+  
+  /* printf("%d: %s\n", strlen(result_string), result_string); */
+
+  size_t to_truncate = ((strlen(result_string) / 8) + 1) * 8 - strlen(result_string);
+  char *header_string = calloc(to_truncate+1, sizeof(char));
+
+  for (size_t i=0; i<to_truncate; i++)
+    header_string[i] = '0';
+  header_string[to_truncate] = '\0';
+  strcat(header_string, result_string);
+  printf("%s\n", header_string);
+
+  
+  for (size_t i=0; i<strlen(header_string)/8; i++) {
+    size_t idx = i*8;
+    char *msg[16] = {0};
+    memcpy(msg, header_string+idx, sizeof(char)*8);
+    printf("%s\n", msg);
   }
 
   
+  printf("%d - %s\n", strlen(header_string), header_string);
+  printf("%d\n", to_truncate);
+  
   free(rd.data);
+  free(result_string);
+  free(header_string);
   remove_huffman_tree(tree);
   return 0;
 }
