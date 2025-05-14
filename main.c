@@ -212,6 +212,17 @@ u8 *convert_string_to_array(size_t chunks_num, const char *result_string) {
   return result;
 }
 
+void w2f(FILE* output_file,
+	 Dict huffman_dict[FREQ_TABLE_SIZE],
+	 size_t to_truncate,
+	 size_t chunks_num,
+	 u8 *compressed_data) {
+  fwrite(huffman_dict, sizeof(Dict)*FREQ_TABLE_SIZE, 1, output_file);
+  fwrite(&to_truncate, sizeof(to_truncate), 1, output_file);
+  fwrite(&chunks_num, sizeof(chunks_num), 1, output_file);
+  fwrite(compressed_data, chunks_num, 1, output_file);
+}
+
 int main(size_t argc, char **argv) {
   // CLI args parsing
   int verbose = 0;
@@ -256,11 +267,13 @@ int main(size_t argc, char **argv) {
   FILE *output_file = fopen(result, "wb");
   assert(output_file != NULL);
 
+  w2f(output_file,
+      huffman_dict,
+      to_truncate,
+      chunks_num,
+      compressed_data);
+  
 
-  fwrite(huffman_dict, sizeof(huffman_dict), 1, output_file);
-  fwrite(&to_truncate, sizeof(to_truncate), 1, output_file);
-  fwrite(&chunks_num, sizeof(chunks_num), 1, output_file);
-  fwrite(compressed_data, chunks_num, 1, output_file);
   fclose(output_file);
 
 
@@ -269,8 +282,9 @@ int main(size_t argc, char **argv) {
   size_t to_truncate_readed = 0;
   size_t chunks_num_readed = 0;
   u8 *compressed_data_readed;
-
+  
   output_file = fopen(result, "rb");
+  
   assert(output_file != NULL);
 
   fread(huffman_dict_readed, sizeof(huffman_dict_readed), 1, output_file);
