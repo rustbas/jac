@@ -206,24 +206,24 @@ int main(size_t argc, char **argv) {
   /* printf("\n"); */
 
   // TODO: Concat using realloc
-  char *result_string = malloc(sizeof(char));
+  char *result_string = (char*) malloc(sizeof(char));
   result_string[0] = '\0';
+  /* result_string[0] = '\0'; */
   for (size_t i=0; i<rd.size; i++) {
-    result_string = strcat(result_string, huffman_dict[rd.data[i]].code);
+    // TODO: avoid using realloc on each iteration
+    char *code = huffman_dict[rd.data[i]].code;
+    result_string = realloc(result_string, strlen(result_string) + strlen(code)+1);
+    result_string = strcat(result_string, code);
   }
   
-  /* printf("%d: %s\n", strlen(result_string), result_string); */
-
   size_t to_truncate = ((strlen(result_string) / 8) + 1) * 8 - strlen(result_string);
   char *header_string = calloc(to_truncate+1, sizeof(char));
 
   for (size_t i=0; i<to_truncate; i++)
     header_string[i] = '0';
-  header_string[to_truncate] = '\0';
-  strcat(header_string, result_string);
-  printf("%s\n", header_string);
-
-  
+  header_string = realloc(header_string, strlen(header_string) + strlen(result_string)+1);
+  header_string = strcat(header_string, result_string);
+      
   for (size_t i=0; i<strlen(header_string)/8; i++) {
     size_t idx = i*8;
     char *msg[16] = {0};
