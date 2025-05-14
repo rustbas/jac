@@ -170,7 +170,7 @@ char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE], size_t *to
 
 #define CHUNK_SIZE 8
 
-u8 chunk_to_num(const char *chunk) {
+u8 chunk_to_num(const char chunk[CHUNK_SIZE]) {
   u8 result = 0;
   u8 base, pow;
   size_t len = strlen(chunk); // We can do that, cause chunk allocated on stack
