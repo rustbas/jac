@@ -229,6 +229,14 @@ void write_data_to_file(const char *filepath,
   fclose(output_file);
 }
 
+void read_from_file(const char* archive_path,
+		    Dict *dict,
+		    size_t *to_truncate,
+		    size_t *chunks_num,
+		    u8 *compressed_data) {
+
+}
+
 int main(size_t argc, char **argv) {
   // CLI args parsing
   int verbose = 0;
