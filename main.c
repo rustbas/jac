@@ -132,7 +132,6 @@ int build_dict_symbol(Tree *tree, Dict *d, size_t depth) {
     if (tree->left_child->isSequence == 0) {
       if (tree->left_child->symbol == d->symbol) {
 	d->code[depth] = tree->left_child->code;
-	/* d->code[depth+1] = '\0'; */
       } else {
 	d->code[depth] = tree->right_child->code;
 	build_dict_symbol(tree->right_child, d, depth+1);
@@ -140,7 +139,6 @@ int build_dict_symbol(Tree *tree, Dict *d, size_t depth) {
     } else {
       if (tree->right_child->symbol == d->symbol) {
 	d->code[depth] = tree->right_child->code;
-	/* d->code[depth+1] = '\0'; */
       } else {
 	d->code[depth] = tree->left_child->code;
 	build_dict_symbol(tree->left_child, d, depth+1);
@@ -151,7 +149,6 @@ int build_dict_symbol(Tree *tree, Dict *d, size_t depth) {
 char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE], size_t *to_truncate) {
   char *coded_string = (char*) malloc(sizeof(char));
   coded_string[0] = '\0';
-  /* coded_string[0] = '\0'; */
   for (size_t i=0; i<rd->size; i++) {
     // TODO: avoid using realloc on each iteration
     char *code = huffman_dict[rd->data[i]].code;
@@ -215,13 +212,8 @@ int main(size_t argc, char **argv) {
   read_file(input_file, &rd, verbose);
   count_freqs(ft, &rd, verbose);
 
-  size_t n = 15;
-  /* printf("First %d elements before sort: \n", n); */
-  /* print_ft(ft, n); */
 
   qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
-  /* printf("First %d elements after sort: \n", n); */
-  /* print_ft(ft, FREQ_TABLE_SIZE); */
   Tree *tree = malloc(sizeof(Tree));
   build_huffman_tree(tree, ft);
 
@@ -229,25 +221,12 @@ int main(size_t argc, char **argv) {
   for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
     huffman_dict[i].symbol = (u8)i;
 
-  /* size_t shift = 0x47; */
-
   for (size_t shift=0; shift < FREQ_TABLE_SIZE; shift++) {
     build_dict_symbol(tree, &huffman_dict[shift], 0);
   }
 
-  size_t shifts[] = {0x0A, 0x61, 0x62, 0x63};
-  size_t shift;
-  for (size_t i=0; i < sizeof(shifts) / sizeof(shifts[0]); i++) {
-    shift = shifts[i];
-    if (verbose)
-      printf("    0x%02X: %s\n",
-	     huffman_dict[shift].symbol,
-	     huffman_dict[shift].code);   
-  }
-
   size_t to_truncate = 0;
   char *result_string = encode_string(&rd, huffman_dict, &to_truncate);
-
 
   size_t chunks_num = strlen(result_string) / CHUNK_SIZE;
   assert(strlen(result_string) % CHUNK_SIZE == 0);
