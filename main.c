@@ -120,7 +120,7 @@ void remove_huffman_tree(Tree *tree) {
   free(tree);
 }
 
-#define STRING_SIZE 512
+#define STRING_SIZE 256
 struct dictionary {
   u8 symbol;
   char code[STRING_SIZE];
