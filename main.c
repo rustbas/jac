@@ -212,7 +212,7 @@ u8 *convert_string_to_array(size_t chunks_num, const char *result_string) {
   return result;
 }
 
-void write_to_file(const char *filepath,
+void write_data_to_file(const char *filepath,
 	 Dict huffman_dict[FREQ_TABLE_SIZE],
 	 size_t to_truncate,
 	 size_t chunks_num,
@@ -272,7 +272,7 @@ int main(size_t argc, char **argv) {
   const char *result = "result.jacz";
 
 
-  write_to_file(result,
+  write_data_to_file(result,
       huffman_dict,
       to_truncate,
       chunks_num,
