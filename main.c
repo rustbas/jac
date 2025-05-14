@@ -171,6 +171,8 @@ char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE], size_t *to
   return result_string;
 }
 
+#define CHUNK_SIZE 8
+
 u8 chunk_to_num(const char *chunk) {
   u8 result = 0;
   u8 base, pow;
@@ -180,6 +182,18 @@ u8 chunk_to_num(const char *chunk) {
     result += base * (1 << (len - i - 1));
   }
   return result;
+}
+
+void num_to_chunk(char buffer[CHUNK_SIZE], u8 data) {
+  for (size_t i=0; i < CHUNK_SIZE; i++)
+    buffer[CHUNK_SIZE - i - 1] = '0' + (data >> i) % 2;
+}
+
+ssize_t get_index_from_dict(Dict dict[FREQ_TABLE_SIZE], const char *code) {
+  for (ssize_t i=0; i<FREQ_TABLE_SIZE; i++)
+    if (strcmp(dict[i].code, code) == 0)
+      return i;
+  return -1;
 }
 
 int main(size_t argc, char **argv) {
@@ -234,9 +248,9 @@ int main(size_t argc, char **argv) {
   size_t to_truncate = 0;
   char *result_string = encode_string(&rd, huffman_dict, &to_truncate);
 
-  size_t chunk_size = 8;
-  size_t chunks_num = strlen(result_string) / chunk_size;
-  assert(strlen(result_string) % chunk_size == 0);
+
+  size_t chunks_num = strlen(result_string) / CHUNK_SIZE;
+  assert(strlen(result_string) % CHUNK_SIZE == 0);
 
   u8 *compressed_data = malloc(sizeof(u8)*chunks_num);
   
@@ -271,18 +285,48 @@ int main(size_t argc, char **argv) {
 
   fread(huffman_dict_readed, sizeof(huffman_dict_readed), 1, output_file);
   fread(&to_truncate_readed, sizeof(to_truncate_readed), 1, output_file);
-  printf("%d\n", to_truncate_readed);
   fread(&chunks_num_readed, sizeof(chunks_num_readed), 1, output_file);
-  printf("%d\n", chunks_num_readed);
 
   compressed_data_readed = malloc(sizeof(u8)*chunks_num_readed);
   fread(compressed_data_readed, sizeof(u8)*chunks_num_readed, 1, output_file);
-  printf("%d\n", memcmp(compressed_data_readed, compressed_data, sizeof(u8)*chunks_num_readed));
-  printf("%d\n", memcmp(huffman_dict, huffman_dict_readed, sizeof(huffman_dict_readed)));
-  
   fclose(output_file);
 
+  char *data_string = calloc(sizeof(char),(chunks_num_readed * 8)+1);
   
+  for (size_t i=0; i<chunks_num_readed; i++) {
+    char buffer[CHUNK_SIZE] = {0};
+    num_to_chunk(buffer, compressed_data_readed[i]);
+    printf("  %02X - ", compressed_data_readed[i]);
+    fwrite(buffer, sizeof(char)*CHUNK_SIZE, 1, stdout);
+    printf("\n");
+
+    char *data_string_cursor = data_string + i*8;
+    memcpy(data_string_cursor, buffer, sizeof(char)*CHUNK_SIZE);
+  }
+  printf("%d - %s\n", strlen(data_string), data_string);
+  printf("%d - %s\n", strlen(data_string+to_truncate_readed), data_string+to_truncate_readed);
+
+  char *string_for_decoding = data_string+to_truncate_readed;
+  size_t begin = 0, len = 1;
+  FILE *test_file = fopen("test.txt", "wb");
+
+  while (begin < strlen(string_for_decoding)) {
+    char buffer[STRING_SIZE+1] = {0};
+    memcpy(buffer, string_for_decoding+begin, sizeof(char)*len);
+    ssize_t idx = get_index_from_dict(huffman_dict_readed, buffer);
+    if (idx == -1) {
+      len++;
+      continue;
+    } else {
+      u8 symbol = huffman_dict_readed[idx].symbol;
+      fwrite(&symbol, sizeof(u8), 1, test_file);
+      begin += len;
+      len = 1;
+    }
+  };
+  
+  fclose(test_file);
+  free(data_string);
   free(rd.data);
   free(result_string);
   free(compressed_data);
