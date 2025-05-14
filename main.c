@@ -148,7 +148,7 @@ int build_dict_symbol(Tree *tree, Dict *d, size_t depth) {
     }
 }
 
-char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE]) {
+char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE], size_t *to_truncate) {
   char *coded_string = (char*) malloc(sizeof(char));
   coded_string[0] = '\0';
   /* coded_string[0] = '\0'; */
@@ -159,10 +159,10 @@ char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE]) {
     coded_string = strcat(coded_string, code);
   }
   
-  size_t to_truncate = ((strlen(coded_string) / 8) + 1) * 8 - strlen(coded_string);
-  char *result_string = calloc(to_truncate+1, sizeof(char));
+  *to_truncate = ((strlen(coded_string) / 8) + 1) * 8 - strlen(coded_string);
+  char *result_string = calloc(*to_truncate+1, sizeof(char));
 
-  for (size_t i=0; i<to_truncate; i++)
+  for (size_t i=0; i<*to_truncate; i++)
     result_string[i] = '0';
   
   result_string = realloc(result_string, strlen(result_string) + strlen(coded_string)+1);
@@ -231,7 +231,8 @@ int main(size_t argc, char **argv) {
 	     huffman_dict[shift].code);   
   }
 
-  char *result_string = encode_string(&rd, huffman_dict);
+  size_t to_truncate = 0;
+  char *result_string = encode_string(&rd, huffman_dict, &to_truncate);
 
   size_t chunk_size = 8;
   size_t chunks_num = strlen(result_string) / chunk_size;
