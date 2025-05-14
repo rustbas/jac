@@ -254,9 +254,35 @@ int main(size_t argc, char **argv) {
   FILE *output_file = fopen(result, "wb");
   assert(output_file != NULL);
 
+
+  fwrite(huffman_dict, sizeof(huffman_dict), 1, output_file);
+  fwrite(&to_truncate, sizeof(to_truncate), 1, output_file);
+  fwrite(&chunks_num, sizeof(chunks_num), 1, output_file);
   fwrite(compressed_data, chunks_num, 1, output_file);
+  fclose(output_file);
+
+  Dict huffman_dict_readed[FREQ_TABLE_SIZE];
+  size_t to_truncate_readed = 0;
+  size_t chunks_num_readed = 0;
+  u8 *compressed_data_readed;
+
+  output_file = fopen(result, "rb");
+  assert(output_file != NULL);
+
+  fread(huffman_dict_readed, sizeof(huffman_dict_readed), 1, output_file);
+  fread(&to_truncate_readed, sizeof(to_truncate_readed), 1, output_file);
+  printf("%d\n", to_truncate_readed);
+  fread(&chunks_num_readed, sizeof(chunks_num_readed), 1, output_file);
+  printf("%d\n", chunks_num_readed);
+
+  compressed_data_readed = malloc(sizeof(u8)*chunks_num_readed);
+  fread(compressed_data_readed, sizeof(u8)*chunks_num_readed, 1, output_file);
+  printf("%d\n", memcmp(compressed_data_readed, compressed_data, sizeof(u8)*chunks_num_readed));
+  printf("%d\n", memcmp(huffman_dict, huffman_dict_readed, sizeof(huffman_dict_readed)));
   
   fclose(output_file);
+
+  
   free(rd.data);
   free(result_string);
   free(compressed_data);
