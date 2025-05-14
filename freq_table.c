@@ -24,7 +24,15 @@ size_t get_index_from_ft(freq ft[FREQ_TABLE_SIZE], u8 symbol) {
   exit(69);
 }
 
+static int freq_comp(const void *a, const void *b) {
+  freq *a_new = (freq*) a;
+  freq *b_new = (freq*) b;
+  return -(a_new->count - b_new->count);
+}
+
 int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose) {
+  for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
+    ft[i].symbol = (u8)i;
   if (verbose)
     printf("[INFO] Counting frequencies...\n");
   for (size_t i = 0; i<rd->size; i++) {
@@ -32,6 +40,8 @@ int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose) {
     size_t idx = (size_t) rd->data[i];
     ft[idx].count++;
   }
+
+  qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
     
   if (verbose == 2) {
     for (size_t i=0; i<32; i++) {
@@ -43,11 +53,7 @@ int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose) {
   }
 }
 
-int freq_comp(const void *a, const void *b) {
-  freq *a_new = (freq*) a;
-  freq *b_new = (freq*) b;
-  return -(a_new->count - b_new->count);
-}
+
 
 void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n) {
   n = (n <= FREQ_TABLE_SIZE) ? n : FREQ_TABLE_SIZE;

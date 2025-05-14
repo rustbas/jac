@@ -31,7 +31,6 @@ int write_to_file(const char* filepath, raw_data *rd);
 
 size_t get_index_from_ft(freq ft[FREQ_TABLE_SIZE], u8 symbol);
 int count_freqs(freq ft[FREQ_TABLE_SIZE], raw_data *rd, int verbose);
-int freq_comp(const void *a, const void *b);
 void print_ft(freq ft[FREQ_TABLE_SIZE], size_t n);
 
 struct Tree {
@@ -42,8 +41,6 @@ struct Tree {
   int isSequence;  
 };
 typedef struct Tree Tree;
-
-
 
 int build_huffman_tree_helper(Tree *tree, freq ft[FREQ_TABLE_SIZE], size_t depth) {
   if (depth == FREQ_TABLE_SIZE-2) {
@@ -146,6 +143,15 @@ int build_dict_symbol(Tree *tree, Dict *d, size_t depth) {
     }
 }
 
+void build_huffman_dict(Dict huffman_dict[FREQ_TABLE_SIZE], Tree *tree) {
+  for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
+    huffman_dict[i].symbol = (u8)i;
+
+  for (size_t shift=0; shift < FREQ_TABLE_SIZE; shift++) {
+    build_dict_symbol(tree, &huffman_dict[shift], 0);
+  }
+}
+
 char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE], size_t *to_truncate) {
   char *coded_string = (char*) malloc(sizeof(char));
   coded_string[0] = '\0';
@@ -193,7 +199,21 @@ ssize_t get_index_from_dict(Dict dict[FREQ_TABLE_SIZE], const char *code) {
   return -1;
 }
 
+u8 *convert_string_to_array(size_t chunks_num, const char *result_string) {
+  u8 *result = malloc(sizeof(u8)*chunks_num);
+  
+  for (size_t i=0; i<chunks_num; i++) {
+    size_t idx = i*8;
+    char msg[16] = {0};
+    memcpy(msg, result_string+idx, sizeof(result_string[0])*8);
+    result[i] = chunk_to_num(msg);
+  }
+
+  return result;
+}
+
 int main(size_t argc, char **argv) {
+  // CLI args parsing
   int verbose = 0;
   char input_file[BUFFER_SIZE];
   assert(argc == 3);
@@ -202,44 +222,36 @@ int main(size_t argc, char **argv) {
     if (strcmp(argv[i], "-i") == 0)
       strcpy(input_file, argv[++i]);
   }
-  
+
+  // Building frequency table
   freq ft[FREQ_TABLE_SIZE] = {0};
-  for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
-    ft[i].symbol = (u8)i;
-  
   raw_data rd = {0};
 
   read_file(input_file, &rd, verbose);
   count_freqs(ft, &rd, verbose);
 
 
-  qsort(ft, FREQ_TABLE_SIZE, sizeof(freq), freq_comp);
+
+  // Building huffman tree
   Tree *tree = malloc(sizeof(Tree));
   build_huffman_tree(tree, ft);
 
+  // Building huffman dictionary
   Dict huffman_dict[FREQ_TABLE_SIZE];
-  for (size_t i=0; i<FREQ_TABLE_SIZE; i++)
-    huffman_dict[i].symbol = (u8)i;
+  build_huffman_dict(huffman_dict, tree);
 
-  for (size_t shift=0; shift < FREQ_TABLE_SIZE; shift++) {
-    build_dict_symbol(tree, &huffman_dict[shift], 0);
-  }
-
+  // Encoding data to binary string
   size_t to_truncate = 0;
   char *result_string = encode_string(&rd, huffman_dict, &to_truncate);
 
   size_t chunks_num = strlen(result_string) / CHUNK_SIZE;
   assert(strlen(result_string) % CHUNK_SIZE == 0);
 
-  u8 *compressed_data = malloc(sizeof(u8)*chunks_num);
-  
-  for (size_t i=0; i<chunks_num; i++) {
-    size_t idx = i*8;
-    char msg[16] = {0};
-    memcpy(msg, result_string+idx, sizeof(result_string[0])*8);
-    compressed_data[i] = chunk_to_num(msg);
-  }
-  
+  // Converting binary string to byte-array
+  u8 *compressed_data = convert_string_to_array(chunks_num, result_string);
+ 
+  // Writing data to file
+  // TODO: use argv
   const char *result = "result.jacz";
   FILE *output_file = fopen(result, "wb");
   assert(output_file != NULL);
@@ -251,6 +263,8 @@ int main(size_t argc, char **argv) {
   fwrite(compressed_data, chunks_num, 1, output_file);
   fclose(output_file);
 
+
+  // Reading data from file
   Dict huffman_dict_readed[FREQ_TABLE_SIZE];
   size_t to_truncate_readed = 0;
   size_t chunks_num_readed = 0;
@@ -267,6 +281,7 @@ int main(size_t argc, char **argv) {
   fread(compressed_data_readed, sizeof(u8)*chunks_num_readed, 1, output_file);
   fclose(output_file);
 
+  // Convering raw data from file to binary string
   char *data_string = calloc(sizeof(char),(chunks_num_readed * 8)+1);
   
   for (size_t i=0; i<chunks_num_readed; i++) {
@@ -277,6 +292,7 @@ int main(size_t argc, char **argv) {
     memcpy(data_string_cursor, buffer, sizeof(char)*CHUNK_SIZE);
   }
 
+  // Writing binary string to file
   char *string_for_decoding = data_string+to_truncate_readed;
   size_t begin = 0, len = 1;
   FILE *test_file = fopen("test.txt", "wb");
