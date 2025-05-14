@@ -148,8 +148,42 @@ int build_dict_symbol(Tree *tree, Dict *d, size_t depth) {
     }
 }
 
+char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE]) {
+  char *coded_string = (char*) malloc(sizeof(char));
+  coded_string[0] = '\0';
+  /* coded_string[0] = '\0'; */
+  for (size_t i=0; i<rd->size; i++) {
+    // TODO: avoid using realloc on each iteration
+    char *code = huffman_dict[rd->data[i]].code;
+    coded_string = realloc(coded_string, strlen(coded_string) + strlen(code)+1);
+    coded_string = strcat(coded_string, code);
+  }
+  
+  size_t to_truncate = ((strlen(coded_string) / 8) + 1) * 8 - strlen(coded_string);
+  char *result_string = calloc(to_truncate+1, sizeof(char));
+
+  for (size_t i=0; i<to_truncate; i++)
+    result_string[i] = '0';
+  
+  result_string = realloc(result_string, strlen(result_string) + strlen(coded_string)+1);
+  result_string = strcat(result_string, coded_string);
+  
+  return result_string;
+}
+
+u8 chunk_to_num(const char *chunk) {
+  u8 result = 0;
+  u8 base, pow;
+  size_t len = strlen(chunk); // We can do that, cause chunk allocated on stack
+  for (size_t i=0; i<len; i++) {
+    base = chunk[i] - '0';
+    result += base * (1 << (len - i - 1));
+  }
+  return result;
+}
+
 int main(size_t argc, char **argv) {
-  int verbose = 1;
+  int verbose = 0;
   char input_file[BUFFER_SIZE];
   assert(argc == 3);
   
@@ -194,53 +228,37 @@ int main(size_t argc, char **argv) {
     if (verbose)
       printf("    0x%02X: %s\n",
 	     huffman_dict[shift].symbol,
-	     /* huffman_dict[shift].symbol, */
 	     huffman_dict[shift].code);   
   }
 
-  /* for (size_t i=0; i<rd.size; i++) */
-  /*   printf(" 0x%02X", rd.data[i]); */
-  /* printf("\n"); */
-  /* for (size_t i=0; i<rd.size; i++) */
-  /*   printf("%5s", huffman_dict[rd.data[i]].code); */
-  /* printf("\n"); */
+  char *result_string = encode_string(&rd, huffman_dict);
 
-  // TODO: Concat using realloc
-  char *result_string = (char*) malloc(sizeof(char));
-  result_string[0] = '\0';
-  /* result_string[0] = '\0'; */
-  for (size_t i=0; i<rd.size; i++) {
-    // TODO: avoid using realloc on each iteration
-    char *code = huffman_dict[rd.data[i]].code;
-    result_string = realloc(result_string, strlen(result_string) + strlen(code)+1);
-    result_string = strcat(result_string, code);
-  }
+  size_t chunk_size = 8;
+  size_t chunks_num = strlen(result_string) / chunk_size;
+  assert(strlen(result_string) % chunk_size == 0);
+
+  u8 *compressed_data = malloc(sizeof(u8)*chunks_num);
   
-  size_t to_truncate = ((strlen(result_string) / 8) + 1) * 8 - strlen(result_string);
-  char *header_string = calloc(to_truncate+1, sizeof(char));
-
-  for (size_t i=0; i<to_truncate; i++)
-    header_string[i] = '0';
-  header_string = realloc(header_string, strlen(header_string) + strlen(result_string)+1);
-  header_string = strcat(header_string, result_string);
-      
-  for (size_t i=0; i<strlen(header_string)/8; i++) {
+  for (size_t i=0; i<chunks_num; i++) {
     size_t idx = i*8;
-    char *msg[16] = {0};
-    memcpy(msg, header_string+idx, sizeof(char)*8);
-    printf("%s\n", msg);
+    char msg[16] = {0};
+    memcpy(msg, result_string+idx, sizeof(result_string[0])*8);
+    compressed_data[i] = chunk_to_num(msg);
+    printf("  %02X - %s\n", compressed_data[i], msg);
   }
+  
+  printf("%d - %s\n", strlen(result_string), result_string);
 
+  const char *result = "result.jacz";
+  FILE *output_file = fopen(result, "wb");
+  assert(output_file != NULL);
+
+  fwrite(compressed_data, chunks_num, 1, output_file);
   
-  printf("%d - %s\n", strlen(header_string), header_string);
-  printf("%d\n", to_truncate);
-  
+  fclose(output_file);
   free(rd.data);
   free(result_string);
-  free(header_string);
+  free(compressed_data);
   remove_huffman_tree(tree);
   return 0;
 }
-
-
-
