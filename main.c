@@ -259,11 +259,8 @@ int main(size_t argc, char **argv) {
     char msg[16] = {0};
     memcpy(msg, result_string+idx, sizeof(result_string[0])*8);
     compressed_data[i] = chunk_to_num(msg);
-    printf("  %02X - %s\n", compressed_data[i], msg);
   }
   
-  printf("%d - %s\n", strlen(result_string), result_string);
-
   const char *result = "result.jacz";
   FILE *output_file = fopen(result, "wb");
   assert(output_file != NULL);
@@ -296,15 +293,10 @@ int main(size_t argc, char **argv) {
   for (size_t i=0; i<chunks_num_readed; i++) {
     char buffer[CHUNK_SIZE] = {0};
     num_to_chunk(buffer, compressed_data_readed[i]);
-    printf("  %02X - ", compressed_data_readed[i]);
-    fwrite(buffer, sizeof(char)*CHUNK_SIZE, 1, stdout);
-    printf("\n");
 
     char *data_string_cursor = data_string + i*8;
     memcpy(data_string_cursor, buffer, sizeof(char)*CHUNK_SIZE);
   }
-  printf("%d - %s\n", strlen(data_string), data_string);
-  printf("%d - %s\n", strlen(data_string+to_truncate_readed), data_string+to_truncate_readed);
 
   char *string_for_decoding = data_string+to_truncate_readed;
   size_t begin = 0, len = 1;
