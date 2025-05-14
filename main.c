@@ -212,15 +212,21 @@ u8 *convert_string_to_array(size_t chunks_num, const char *result_string) {
   return result;
 }
 
-void w2f(FILE* output_file,
+void write_to_file(const char *filepath,
 	 Dict huffman_dict[FREQ_TABLE_SIZE],
 	 size_t to_truncate,
 	 size_t chunks_num,
 	 u8 *compressed_data) {
+  // TODO: use raw_data's functions
+  FILE *output_file = fopen(filepath, "wb");
+  assert(output_file != NULL);
+  
   fwrite(huffman_dict, sizeof(Dict)*FREQ_TABLE_SIZE, 1, output_file);
   fwrite(&to_truncate, sizeof(to_truncate), 1, output_file);
   fwrite(&chunks_num, sizeof(chunks_num), 1, output_file);
   fwrite(compressed_data, chunks_num, 1, output_file);
+
+  fclose(output_file);
 }
 
 int main(size_t argc, char **argv) {
@@ -264,17 +270,13 @@ int main(size_t argc, char **argv) {
   // Writing data to file
   // TODO: use argv
   const char *result = "result.jacz";
-  FILE *output_file = fopen(result, "wb");
-  assert(output_file != NULL);
 
-  w2f(output_file,
+
+  write_to_file(result,
       huffman_dict,
       to_truncate,
       chunks_num,
       compressed_data);
-  
-
-  fclose(output_file);
 
 
   // Reading data from file
@@ -283,7 +285,7 @@ int main(size_t argc, char **argv) {
   size_t chunks_num_readed = 0;
   u8 *compressed_data_readed;
   
-  output_file = fopen(result, "rb");
+  FILE *output_file = fopen(result, "rb");
   
   assert(output_file != NULL);
 
