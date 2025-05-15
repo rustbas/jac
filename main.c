@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define UNIMPLEMENTED							\
   do {									\
@@ -83,6 +84,8 @@ void decode_to_file(const char *filepath,
 void compress_file(const char *input_file,
 		   const char *archive_file,
 		   int verbose) {
+  if (verbose)
+    fprintf(stderr, "Compressing file \"%s\"\n", input_file);
   // Building frequency table
   freq ft[FREQ_TABLE_SIZE] = {0};
   raw_data rd = {0};
@@ -124,7 +127,10 @@ void compress_file(const char *input_file,
 };
 
 void extract_file(const char *archive_file,
-		  const char *result) {
+		  const char *result,
+		  int verbose) {
+  if (verbose)
+    fprintf(stderr, "Extracting file \"%s\"\n", archive_file);
   // Reading data from file
   Dict huffman_dict_readed[FREQ_TABLE_SIZE];
   size_t to_truncate_readed = 0;
@@ -160,19 +166,48 @@ int main(size_t argc, char **argv) {
   // CLI args parsing
   int verbose = 0;
   enum Mode mode;
-  char input_file[BUFFER_SIZE];
-  assert(argc > 2);
+  char input_file[BUFFER_SIZE], output_file[BUFFER_SIZE];
+
+  const char *optstring = "xci:o:v";
+  int opt;
   
-  for (size_t i=0; i<argc; i++) {
-    if (strcmp(argv[i], "-i") == 0)
-      strcpy(input_file, argv[++i]);
+  while ((opt = getopt(argc, argv, optstring)) != -1) {
+    switch (opt)
+      {
+      case 'v':
+	verbose = 1;
+	break;
+      case 'i':
+	strcpy(input_file, optarg);
+	break;
+      case 'o':
+	strcpy(output_file, optarg);
+	break;
+      case 'x':
+	mode = EXTRACT;
+	break;
+      case 'c':
+	mode = COMPRESS;
+	break;
+      case '?':
+	if (optopt == 'i' || optopt == 'c')
+	  fprintf(stderr, "Option -%c requires an argument!\n", optopt);
+	else
+	  fprintf(stderr, "Unknown argument -%c\n", optopt);
+	return 1;
+      default:
+	abort();
+      }
   }
 
-  const char *archive_name = "result.jacz";
-  compress_file(input_file, archive_name, 0);
-
-  const char *extracted_file = "test.txt";
-  extract_file(archive_name, extracted_file);
-
+  switch (mode)
+    {
+    case COMPRESS:
+      compress_file(input_file, output_file, verbose);
+      break;
+    case EXTRACT:
+      extract_file(input_file, output_file, verbose);
+    }
+  
   return 0;
 }
