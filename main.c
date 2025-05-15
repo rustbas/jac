@@ -151,11 +151,17 @@ void extract_file(const char *archive_file,
   free(data_string);
 };
 
+enum Mode {
+  EXTRACT,
+  COMPRESS
+};
+
 int main(size_t argc, char **argv) {
   // CLI args parsing
   int verbose = 0;
+  enum Mode mode;
   char input_file[BUFFER_SIZE];
-  assert(argc == 3);
+  assert(argc > 2);
   
   for (size_t i=0; i<argc; i++) {
     if (strcmp(argv[i], "-i") == 0)
