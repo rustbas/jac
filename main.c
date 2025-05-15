@@ -229,12 +229,59 @@ void write_data_to_file(const char *filepath,
   fclose(output_file);
 }
 
-void read_from_file(const char* archive_path,
+u8 *read_from_file(const char *filepath,
 		    Dict *dict,
 		    size_t *to_truncate,
-		    size_t *chunks_num,
-		    u8 *compressed_data) {
+		    size_t *chunks_num) {
+  FILE *fd = fopen(filepath, "rb");
+  assert(fd != NULL);
+  
+  fread(dict, sizeof(Dict)*FREQ_TABLE_SIZE, 1, fd);
+  fread(to_truncate, sizeof(size_t), 1, fd);
+  fread(chunks_num, sizeof(size_t), 1, fd);
+  size_t cn = *chunks_num;
+  u8 *compressed_data = (u8*) malloc(sizeof(u8)*cn);
+  fread(compressed_data, sizeof(u8)*cn, 1, fd);
 
+  fclose(fd);
+  return compressed_data;
+}
+
+char *convert_data_to_string(size_t chunks_num,
+			     u8 *compressed_data) {
+  char *data_string = calloc(sizeof(char),(chunks_num * 8)+1);
+  
+  for (size_t i=0; i<chunks_num; i++) {
+    char buffer[CHUNK_SIZE] = {0};
+    num_to_chunk(buffer, compressed_data[i]);
+
+    char *data_string_cursor = data_string + i*8;
+    memcpy(data_string_cursor, buffer, sizeof(char)*CHUNK_SIZE);
+  }
+
+  return data_string;
+}
+
+void decode_to_file(const char *filepath,
+		    const char *string_for_decoding,
+		    Dict *dict) {
+  FILE *test_file = fopen("test.txt", "wb");
+  size_t begin = 0, len = 1;
+  while (begin < strlen(string_for_decoding)) {
+    char buffer[STRING_SIZE+1] = {0};
+    memcpy(buffer, string_for_decoding+begin, sizeof(char)*len);
+    ssize_t idx = get_index_from_dict(dict, buffer);
+    if (idx == -1) {
+      len++;
+      continue;
+    } else {
+      u8 symbol = dict[idx].symbol;
+      fwrite(&symbol, sizeof(u8), 1, test_file);
+      begin += len;
+      len = 1;
+    }
+  };
+  fclose(test_file);
 }
 
 int main(size_t argc, char **argv) {
@@ -293,50 +340,26 @@ int main(size_t argc, char **argv) {
   size_t chunks_num_readed = 0;
   u8 *compressed_data_readed;
   
-  FILE *output_file = fopen(result, "rb");
-  
-  assert(output_file != NULL);
-
-  fread(huffman_dict_readed, sizeof(huffman_dict_readed), 1, output_file);
-  fread(&to_truncate_readed, sizeof(to_truncate_readed), 1, output_file);
-  fread(&chunks_num_readed, sizeof(chunks_num_readed), 1, output_file);
-
-  compressed_data_readed = malloc(sizeof(u8)*chunks_num_readed);
-  fread(compressed_data_readed, sizeof(u8)*chunks_num_readed, 1, output_file);
-  fclose(output_file);
+  compressed_data_readed = read_from_file(result,
+					  huffman_dict_readed,
+					  &to_truncate_readed,
+					  &chunks_num_readed);
 
   // Convering raw data from file to binary string
-  char *data_string = calloc(sizeof(char),(chunks_num_readed * 8)+1);
-  
-  for (size_t i=0; i<chunks_num_readed; i++) {
-    char buffer[CHUNK_SIZE] = {0};
-    num_to_chunk(buffer, compressed_data_readed[i]);
-
-    char *data_string_cursor = data_string + i*8;
-    memcpy(data_string_cursor, buffer, sizeof(char)*CHUNK_SIZE);
-  }
+  char *data_string = convert_data_to_string(chunks_num_readed,
+					     compressed_data_readed);
 
   // Writing binary string to file
   char *string_for_decoding = data_string+to_truncate_readed;
   size_t begin = 0, len = 1;
-  FILE *test_file = fopen("test.txt", "wb");
+  const char *test_filename = "test.txt";
 
-  while (begin < strlen(string_for_decoding)) {
-    char buffer[STRING_SIZE+1] = {0};
-    memcpy(buffer, string_for_decoding+begin, sizeof(char)*len);
-    ssize_t idx = get_index_from_dict(huffman_dict_readed, buffer);
-    if (idx == -1) {
-      len++;
-      continue;
-    } else {
-      u8 symbol = huffman_dict_readed[idx].symbol;
-      fwrite(&symbol, sizeof(u8), 1, test_file);
-      begin += len;
-      len = 1;
-    }
-  };
+  decode_to_file(test_filename,
+		 string_for_decoding,
+		 huffman_dict_readed);
   
-  fclose(test_file);
+
+  
   free(data_string);
   free(rd.data);
   free(result_string);
