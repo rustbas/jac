@@ -137,14 +137,21 @@ void build_huffman_dict(Dict huffman_dict[FREQ_TABLE_SIZE], Tree *tree) {
 }
 
 char *encode_string(raw_data *rd, Dict huffman_dict[FREQ_TABLE_SIZE], size_t *to_truncate) {
-  char *coded_string = (char*) malloc(sizeof(char));
-  coded_string[0] = '\0';
+  /* char *coded_string = (char*) malloc(sizeof(char)); */
+  /* coded_string[0] = '\0'; */
+  /* for (size_t i=0; i<rd->size; i++) { */
+  /*   char *code = huffman_dict[rd->data[i]].code; */
+  /*   coded_string = realloc(coded_string, strlen(coded_string) + strlen(code)+1); */
+  /*   coded_string = strcat(coded_string, code); */
+  /* } */
+  size_t coded_string_len = 1;
   for (size_t i=0; i<rd->size; i++) {
-    // TODO: avoid using realloc on each iteration
-    char *code = huffman_dict[rd->data[i]].code;
-    coded_string = realloc(coded_string, strlen(coded_string) + strlen(code)+1);
-    coded_string = strcat(coded_string, code);
+    coded_string_len += strlen(huffman_dict[rd->data[i]].code);
   }
+
+  char *coded_string = (char*) calloc(sizeof(char), coded_string_len);
+  for (size_t i=0; i<rd->size; i++)
+    coded_string = strcat(coded_string, huffman_dict[rd->data[i]].code);
   
   *to_truncate = ((strlen(coded_string) / 8) + 1) * 8 - strlen(coded_string);
   char *result_string = calloc(*to_truncate+1, sizeof(char));
