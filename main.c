@@ -80,6 +80,14 @@ void decode_to_file(const char *filepath,
 		    const char *string_for_decoding,
 		    Dict *dict);
 
+void compress_file() {
+  
+};
+
+void extract_file() {
+  
+};
+
 int main(size_t argc, char **argv) {
   // CLI args parsing
   int verbose = 0;
@@ -97,8 +105,6 @@ int main(size_t argc, char **argv) {
 
   read_file(input_file, &rd, verbose);
   count_freqs(ft, &rd, verbose);
-
-
 
   // Building huffman tree
   Tree *tree = malloc(sizeof(Tree));
@@ -128,7 +134,6 @@ int main(size_t argc, char **argv) {
       to_truncate,
       chunks_num,
       compressed_data);
-
 
   // Reading data from file
   Dict huffman_dict_readed[FREQ_TABLE_SIZE];
