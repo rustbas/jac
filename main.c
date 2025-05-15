@@ -80,25 +80,9 @@ void decode_to_file(const char *filepath,
 		    const char *string_for_decoding,
 		    Dict *dict);
 
-void compress_file() {
-  
-};
-
-void extract_file() {
-  
-};
-
-int main(size_t argc, char **argv) {
-  // CLI args parsing
-  int verbose = 0;
-  char input_file[BUFFER_SIZE];
-  assert(argc == 3);
-  
-  for (size_t i=0; i<argc; i++) {
-    if (strcmp(argv[i], "-i") == 0)
-      strcpy(input_file, argv[++i]);
-  }
-
+void compress_file(const char *input_file,
+		   const char *archive_file,
+		   int verbose) {
   // Building frequency table
   freq ft[FREQ_TABLE_SIZE] = {0};
   raw_data rd = {0};
@@ -126,22 +110,28 @@ int main(size_t argc, char **argv) {
  
   // Writing data to file
   // TODO: use argv
-  const char *result = "result.jacz";
 
-
-  write_data_to_file(result,
+  write_data_to_file(archive_file,
       huffman_dict,
       to_truncate,
       chunks_num,
       compressed_data);
 
+  free(rd.data);
+  free(result_string);
+  free(compressed_data);
+  remove_huffman_tree(tree);
+};
+
+void extract_file(const char *archive_file,
+		  const char *result) {
   // Reading data from file
   Dict huffman_dict_readed[FREQ_TABLE_SIZE];
   size_t to_truncate_readed = 0;
   size_t chunks_num_readed = 0;
   u8 *compressed_data_readed;
   
-  compressed_data_readed = read_from_file(result,
+  compressed_data_readed = read_from_file(archive_file,
 					  huffman_dict_readed,
 					  &to_truncate_readed,
 					  &chunks_num_readed);
@@ -153,18 +143,30 @@ int main(size_t argc, char **argv) {
   // Writing binary string to file
   char *string_for_decoding = data_string+to_truncate_readed;
   size_t begin = 0, len = 1;
-  const char *test_filename = "test.txt";
 
-  decode_to_file(test_filename,
+  decode_to_file(result,
 		 string_for_decoding,
 		 huffman_dict_readed);
-  
 
-  
   free(data_string);
-  free(rd.data);
-  free(result_string);
-  free(compressed_data);
-  remove_huffman_tree(tree);
+};
+
+int main(size_t argc, char **argv) {
+  // CLI args parsing
+  int verbose = 0;
+  char input_file[BUFFER_SIZE];
+  assert(argc == 3);
+  
+  for (size_t i=0; i<argc; i++) {
+    if (strcmp(argv[i], "-i") == 0)
+      strcpy(input_file, argv[++i]);
+  }
+
+  const char *archive_name = "result.jacz";
+  compress_file(input_file, archive_name, 0);
+
+  const char *extracted_file = "test.txt";
+  extract_file(archive_name, extracted_file);
+
   return 0;
 }
